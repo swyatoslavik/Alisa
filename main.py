@@ -1,18 +1,32 @@
 from flask import Flask, request
+from alisa import Dialog, Alisa
+import json
+
+
+class StartDialog(Dialog):
+    def handle_dialog(self, alisa):
+        if alisa.is_new_session():
+            return self.greetings(alisa)
+
+        if alisa.has_intent("YANDEX.HELP"):
+            return self.help(alisa)
+
+        if alisa.has_intent("YANDEX.WHAT_CAN_YOU_DO"):
+            return self.what_you_can_do(alisa)
+
 
 app = Flask(__name__)
+dialog = StartDialog()
+
 
 @app.route("/alice", methods=["POST"])
 def resp():
     text = request.json.get("request", {}).get("command")
-    response_text = f"Вы сказали {text}"
-    response = {
-        "response": {
-            "text": response_text,
-            "end_session": False
-        },
-        "version": "1.0"
-    }
-    return response
+    response = {"response": {"end_session": True}, "version": "1.0"}
 
-app.run("0.0.0.0", port=5000, debug=True)
+    dialog.handle_dialog(Alisa(request.json, response))
+
+    return json.dumps(response, ensure_ascii=False, indent=2)
+
+
+app.run(threaded=True, debug=True)
