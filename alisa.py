@@ -80,26 +80,40 @@ class Dialog:
 
         if alisa.get_state().get("session", {}).get("stage") == 2:
             if alisa.get_button_payload_value("type") == 1:
+                alisa.suggest(
+                    "Маршрут",
+                    url="https://yandex.ru/maps/39/rostov-na-donu/?mode=routes&rtext=47.228369%2C39.714788~47.220303%2C39.720510",
+                )
                 return alisa.text(
                     "Поскольку это тестовая версия, я выбрала ваше место вместо вас - Ростов-на-Дону\n"
                     "Ближайший к вам центр гуманитарной помощи находится по адресу Ворошиловский проспект, 12/85."
-                    "Маршрут от вас до него в Яндекс Картах (todo: добавить расчётное время прибытия): https://yandex.ru/maps/39/rostov-na-donu/?mode=routes&rtext=47.228369%2C39.714788~47.220303%2C39.720510"
                 )
             if alisa.get_button_payload_value("type") == 2:
+                alisa.suggest(
+                    "Маршрут",
+                    url="https://yandex.ru/maps/39/rostov-na-donu/?mode=routes&rtext=47.228369%2C39.714788~47.219477%2C39.717914",
+                )
                 return alisa.text(
                     "Поскольку это тестовая версия, я выбрала ваше место вместо вас - Ростов-на-Дону\n"
                     "Ближайший к вам центр госпиталь находится по адресу ул. Московская, 77."
-                    "Маршрут от вас до него в Яндекс Картах (todo: добавить расчётное время прибытия): https://yandex.ru/maps/39/rostov-na-donu/?mode=routes&rtext=47.228369%2C39.714788~47.219477%2C39.717914"
                 )
             if alisa.get_button_payload_value("type") == 3:
+                alisa.suggest(
+                    "Маршрут",
+                    url="https://yandex.ru/maps/39/rostov-na-donu/?mode=routes&rtext=47.228369%2C39.714788~46.098711%2C47.735666",
+                )
                 return alisa.text(
                     "Поскольку это тестовая версия, я выбрала ваше место вместо вас - Ростов-на-Дону\n"
                     "Ближайший к вам центр гуманитарной помощи находится по адресу Икряное, 1 Мая ул, 19"
-                    "Маршрут от вас до него в Яндекс Картах (todo: добавить расчётное время прибытия): https://yandex.ru/maps/39/rostov-na-donu/?mode=routes&rtext=47.228369%2C39.714788~46.098711%2C47.735666"
                 )
 
+        else:
+            alisa.end_session()
+
     def greetings(self, alisa: Alisa):
-        alisa.tts_with_text("greetings placeholder")
+        alisa.tts_with_text(
+            "Я  - Рука помощи! Моя задача заключается  бомбоубежищ, а также пунктов гуманитарной помощи.\nДля начала работы навыка нужно выбрать тип помощи кнопками ниже\n\n(pre-alpha)"
+        )
         alisa.suggest("Найди центр гуманитарной помощи", payload={"type": 1})
         alisa.suggest("Найди госпиталь", payload={"type": 2})
         alisa.suggest("Найди место временного размещения", payload={"type": 3})
