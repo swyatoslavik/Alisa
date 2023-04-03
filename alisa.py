@@ -1,5 +1,7 @@
 import random
 
+import founder
+
 
 class Alisa:
     def __init__(self, request, response):
@@ -74,56 +76,80 @@ class Dialog:
         if alisa.has_intent("YANDEX.WHAT_CAN_YOU_DO"):
             return self.what_you_can_do(alisa)
 
-        # Формат ссылки на маршрут: https://yandex.ru/maps/39/rostov-na-donu/?mode=routes&rtext=широта(от)%2Cдолгота(от)~широта(до)%2Cдолгота(до)
-        # Я сейчас сижу в 2 часа ночи и ни хуя не вдупляю, почему между координатами %2C понять не смогу
-        # Максимально сокращаю просто делая вид, что у нас готово что-то, на самом деле я просто вставляю готовый текст
+        # Формат ссылки на маршрут: https://yandex.ru/maps/?mode=routes&rtext=широта(от)%2Cдолгота(от)~широта(до)%2Cдолгота(до)
+        if alisa.get_button_payload_value("type") == "restart":
+            return self.greetings(alisa)
 
         if alisa.get_state().get("session", {}).get("stage") == 2:
-            if alisa.get_button_payload_value("type") == 1:
-                alisa.suggest(
-                    "Маршрут",
-                    url="https://yandex.ru/maps/39/rostov-na-donu/?mode=routes&rtext=47.228369%2C39.714788~47.220303%2C39.720510",
-                )
-                return alisa.text(
-                    "Поскольку это тестовая версия, я выбрала ваше место вместо вас - Ростов-на-Дону\n"
-                    "Ближайший к вам центр гуманитарной помощи находится по адресу Ворошиловский проспект, 12/85."
-                )
-            if alisa.get_button_payload_value("type") == 2:
-                alisa.suggest(
-                    "Маршрут",
-                    url="https://yandex.ru/maps/39/rostov-na-donu/?mode=routes&rtext=47.228369%2C39.714788~47.219477%2C39.717914",
-                )
-                return alisa.text(
-                    "Поскольку это тестовая версия, я выбрала ваше место вместо вас - Ростов-на-Дону\n"
-                    "Ближайший к вам центр госпиталь находится по адресу ул. Московская, 77."
-                )
-            if alisa.get_button_payload_value("type") == 3:
-                alisa.suggest(
-                    "Маршрут",
-                    url="https://yandex.ru/maps/39/rostov-na-donu/?mode=routes&rtext=47.228369%2C39.714788~46.098711%2C47.735666",
-                )
-                return alisa.text(
-                    "Поскольку это тестовая версия, я выбрала ваше место вместо вас - Ростов-на-Дону\n"
-                    "Ближайший к вам центр гуманитарной помощи находится по адресу Икряное, 1 Мая ул, 19"
-                )
+            alisa.add_to_session_state("city", str(alisa.get_original_utterance()))
+            alisa.suggest("Госпиталь", payload={"type": 1})
+            alisa.suggest("Народный фронт", payload={"type": 2})
+            alisa.suggest("Пункт расселения беженцев", payload={"type": 3})
+            alisa.suggest("Назад", payload={"type": "restart"})
+            alisa.text(f"Ваш город: {str(alisa.get_original_utterance())} \n"
+                       f"Выберите необходимое место: Госпиталь, Народный фронт, Пункт расселения беженцев или Бомбоубежища. \n"
+                       f"Если выбран неправильный город, скажите: Назад")
+            alisa.add_to_session_state("stage", 3)
 
-        else:
-            alisa.end_session()
+        if alisa.get_state().get("session", {}).get("stage") == 3:
+            city = str(alisa.get_state().get("session", {}).get("city"))
+            if alisa.get_button_payload_value("type") == 1 or alisa.has_intent("hospital"):
+                coords, address = founder.get_hospital(city)
+                if coords == "error":
+                    alisa.add_to_session_state("stage", 2)
+                    return alisa.tts_with_text("Ошибка поиска, попробуйте выбрать город ещё раз")
+                city_coords = founder.get_city_coords(city)
+                alisa.suggest(
+                    "Маршрут",
+                    url=f"https://yandex.ru/maps/?mode=routes&rtext={city_coords[0]}%2C{city_coords[1]}~{coords[1]}%2C{coords[0]}",
+                )
+                return alisa.tts_with_text(
+                    f"Адрес ближайшего к центру вашего города госпиталя: {address}."
+                )
+            if alisa.get_button_payload_value("type") == 2 or alisa.has_intent("front"):
+                coords, address = founder.front(city)
+                city_coords = founder.get_city_coords(city)
+                alisa.suggest(
+                    "Маршрут",
+                    url=f"https://yandex.ru/maps/?mode=routes&rtext={city_coords[0]}%2C{city_coords[1]}~{coords[1]}%2C{coords[0]}",
+                )
+                return alisa.tts_with_text(
+                    f"Адрес ближайшего к центру вашего города народного фронта: {address}."
+                )
+            if alisa.get_button_payload_value("type") == 3 or alisa.has_intent("bezenec"):
+                coords, address = founder.bezhenc(city)
+                city_coords = founder.get_city_coords(city)
+                alisa.suggest(
+                    "Маршрут",
+                    url=f"https://yandex.ru/maps/?mode=routes&rtext={city_coords[0]}%2C{city_coords[1]}~{coords[1]}%2C{coords[0]}",
+                )
+                return alisa.tts_with_text(
+                    f"Адрес ближайшего к центру вашего города пункта расселения беженцев: {address}."
+                )
+            else:
+                alisa.add_to_session_state("stage", 2)
+                return alisa.tts_with_text("Я вас не поняла, введите город ещё раз")
+
+        # else:
+        #     alisa.end_session()
 
     def greetings(self, alisa: Alisa):
         alisa.tts_with_text(
-            "Я  - Рука помощи! Моя задача заключается  бомбоубежищ, а также пунктов гуманитарной помощи.\nДля начала работы навыка нужно выбрать тип помощи кнопками ниже\n\n(pre-alpha)"
+            "Я  - Рука помощи! Моя задача заключается  бомбоубежищ, а также пунктов гуманитарной помощи.\nДля начала работы навыка скажите название вашего города"
         )
-        alisa.suggest("Найди центр гуманитарной помощи", payload={"type": 1})
-        alisa.suggest("Найди госпиталь", payload={"type": 2})
-        alisa.suggest("Найди место временного размещения", payload={"type": 3})
         alisa.add_to_session_state("stage", 2)
 
     def random_help(self):
         texts = [
-            "Скоро здесь будет текст для помощи, и даже несколько (1/3)",
-            "Скоро здесь будет текст для помощи, и даже несколько (2/3)",
-            "Скоро здесь будет текст для помощи, и даже несколько (3/3)",
+            "В связи актуальными событиями, был создан я - навык под названием Рука помощи. "
+            "Главная моя задача при использовании - помочь найти вам нужное строении в одной из 3-х категорий. "
+            "Это госпитали, народные фронты, а также пункты расселения беженцев. ",
+            "В последнее время в мире происходят разные вещи. И не всегда они несут добро, отчего многие начали искать себе убежище."
+            "Данный навык был создан для облегчения поиска безопасного места. "
+            "Я могу искать такие места, как госпитали, народные фронты, а также пункты расселения беженцев. ",
+            "На данный момент, обстановка в мире немного накалилась, поэтому для сохранения жизни нужно найти безопасное и крепкое место. "
+            "Как раз в этом и заключается моя задача. Я могу искать такие места, как госпитали, народные фронты, а также пункты расселения беженцев. "
+                                                                                                                                                                                                                                              "В эти категории входят: госпитали, бомбоубежища, общежития, пункты с гуманитарной помощью",
         ]
 
         return random.choice(texts)
