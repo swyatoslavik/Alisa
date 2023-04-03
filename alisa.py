@@ -86,18 +86,24 @@ class Dialog:
             alisa.suggest("Народный фронт", payload={"type": 2})
             alisa.suggest("Пункт расселения беженцев", payload={"type": 3})
             alisa.suggest("Назад", payload={"type": "restart"})
-            alisa.text(f"Ваш город: {str(alisa.get_original_utterance())} \n"
-                       f"Выберите необходимое место: Госпиталь, Народный фронт, Пункт расселения беженцев или Бомбоубежища. \n"
-                       f"Если выбран неправильный город, скажите: Назад")
+            alisa.text(
+                f"Ваш город: {str(alisa.get_original_utterance())} \n"
+                f"Выберите необходимое место: Госпиталь, Народный фронт, Пункт расселения беженцев или Бомбоубежища. \n"
+                f"Если выбран неправильный город, скажите: Назад"
+            )
             alisa.add_to_session_state("stage", 3)
 
         if alisa.get_state().get("session", {}).get("stage") == 3:
             city = str(alisa.get_state().get("session", {}).get("city"))
-            if alisa.get_button_payload_value("type") == 1 or alisa.has_intent("hospital"):
+            if alisa.get_button_payload_value("type") == 1 or alisa.has_intent(
+                "hospital"
+            ):
                 coords, address = founder.get_hospital(city)
                 if coords == "error":
                     alisa.add_to_session_state("stage", 2)
-                    return alisa.tts_with_text("Ошибка поиска, попробуйте выбрать город ещё раз")
+                    return alisa.tts_with_text(
+                        "Ошибка поиска, попробуйте выбрать город ещё раз"
+                    )
                 city_coords = founder.get_city_coords(city)
                 alisa.suggest(
                     "Маршрут",
@@ -116,7 +122,9 @@ class Dialog:
                 return alisa.tts_with_text(
                     f"Адрес ближайшего к центру вашего города народного фронта: {address}."
                 )
-            if alisa.get_button_payload_value("type") == 3 or alisa.has_intent("bezenec"):
+            if alisa.get_button_payload_value("type") == 3 or alisa.has_intent(
+                "bezenec"
+            ):
                 coords, address = founder.bezhenc(city)
                 city_coords = founder.get_city_coords(city)
                 alisa.suggest(
@@ -149,7 +157,7 @@ class Dialog:
             "Я могу искать такие места, как госпитали, народные фронты, а также пункты расселения беженцев. ",
             "На данный момент, обстановка в мире немного накалилась, поэтому для сохранения жизни нужно найти безопасное и крепкое место. "
             "Как раз в этом и заключается моя задача. Я могу искать такие места, как госпитали, народные фронты, а также пункты расселения беженцев. "
-                                                                                                                                                                                                                                              "В эти категории входят: госпитали, бомбоубежища, общежития, пункты с гуманитарной помощью",
+            "В эти категории входят: госпитали, бомбоубежища, общежития, пункты с гуманитарной помощью",
         ]
 
         return random.choice(texts)
