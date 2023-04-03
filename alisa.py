@@ -71,10 +71,13 @@ class Dialog:
             return self.greetings(alisa)
 
         if alisa.has_intent("YANDEX.HELP"):
+            alisa.add_to_session_state("stage", 2)
             return self.help(alisa)
 
         if alisa.has_intent("YANDEX.WHAT_CAN_YOU_DO"):
+            alisa.add_to_session_state("stage", 2)
             return self.what_you_can_do(alisa)
+
 
         # Формат ссылки на маршрут: https://yandex.ru/maps/?mode=routes&rtext=широта(от)%2Cдолгота(от)~широта(до)%2Cдолгота(до)
         if alisa.get_button_payload_value("type") == "restart":
